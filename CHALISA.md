@@ -8,7 +8,7 @@ illustrations by id. Never copy other channels' hooks, captions, art or wording 
 - दिन 1: opening dohas 1–2 ✅ (2026-11-28)
 - दिन 2: चौपाई 1–2 · दिन 3: 3–4 · दिन 4: 5–6 · … · दिन N: चौपाई (2N−3)–(2N−2) · दिन 21: चौपाई 39–40
 - दिन 22: closing doha + series wrap-up ("कल से नई series: श्रीमद्भगवद्गीता")
-After दिन 22 → start Gita series (GITA.md, to be written then): Chapter 1 from verse 1, 1–2 shlokas per day, same format.
+After दिन 22 → the very next morning start the Gita series automatically (owner approved) — follow GITA.md.
 
 ## Progress (update after each post)
 last_day_posted: 1   (दिन 1 is already scheduled for 2026-11-28 07:00 by hand)

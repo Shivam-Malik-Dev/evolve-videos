@@ -8,6 +8,9 @@ Approved references: specs/youtube/harshad_mehta.json (long) → https://www.you
   ("आज शाम 6 बजे पूरी कहानी" style cliffhanger). The custom thumbnail is set by a separate 18:23 task.
 - **All other days**: ONE standalone Short (35–50 s) published 18:30.
 
+## Exceptions
+- 2026-11-28 (Sat): owner skipped the long video to save plan usage → make ONE standalone Short at 18:30 instead. Long videos start Wed 2026-12-02.
+
 ## Niche & topics
 India AND world: untold / lesser-known true stories, mysteries, history, scams & business stories, science & "how it works",
 and explainers on what is trending right now (news everyone is searching). Educational, gripping, documentary style like the
