@@ -79,6 +79,39 @@ def compress_pauses(wav, words, comma=0.45, normal=0.34, dramatic=0.62):
     return [(remap(a), remap(b), t) for a, b, t in words]
 
 
+SENT_GAP, SENT_GAP_LONG = 0.16, 0.30
+
+
+def split_sentences(text):
+    parts = re.split(r"(?<=[।?!])\s+", text.strip())
+    return [p for p in parts if p.strip()]
+
+
+def sentence_prosody(sent, j, mood):
+    """small per-sentence variation so delivery follows the line: questions lift, exclamations punch,
+    '...' slows down, and alternate sentences vary slightly so it never sounds flat."""
+    r = p = v = 0
+    s = sent.strip()
+    if s.endswith("?"):
+        r, p = r + 3, p + 4
+    if s.endswith("!"):
+        r, p, v = r + 6, p + 6, v + 10
+    if "..." in s or "…" in s:
+        r -= 6
+    if len(s) < 25:  # short punchy line: a bit slower, more weight
+        r -= 4; v += 5
+    p += (2 if j % 2 else -1)
+    return r, p, v
+
+
+def add_hz(base, d):
+    return f"{int(base.replace('Hz', '')) + d:+d}Hz"
+
+
+def add_pct(base, d):
+    return f"{int(base.strip('%')) + d:+d}%"
+
+
 def shift(rate, delta):
     return f"{int(rate.strip('%')) + delta:+d}%"
 
@@ -257,7 +290,7 @@ def main(spec_path, out):
 
     # 1. voice: one TTS call per emotional block (several sentences) so speech flows naturally
     lines = spec.get("blocks") or spec["lines"]
-    words, t0, line_spans, wavs, hits = [], 0.0, [], [], []
+    words, t0, line_spans, wavs, hits, bells = [], 0.0, [], [], [], []
     for i, ln in enumerate(lines):
         mood = MOODS.get(ln.get("mood", "neutral"), MOODS["neutral"])
         pause = ln.get("pause_before", mood["pause"] if i else 0.0)
@@ -268,19 +301,30 @@ def main(spec_path, out):
             t0 += pause
         if ln.get("mood") in ("shock", "hook"):
             hits.append(max(t0 - 0.12, 0))
-        mp3 = os.path.join(work, f"v{i}.mp3")
-        ws = asyncio.run(tts_line(ln["say"], voice, shift(rate, mood["rate"]), mp3, mood["pitch"], mood["vol"]))
-        wav = os.path.join(work, f"v{i}.wav")
-        # keep natural internal pauses, trim only the long tail silence
-        sh("ffmpeg", "-y", "-v", "error", "-i", mp3, "-af",
-           "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.08,areverse",
-           "-ar", "24000", "-ac", "1", wav)
-        ws = compress_pauses(wav, ws)
-        d = dur(wav)
-        words += [(a + t0, min(b, d) + t0, txt) for a, b, txt in ws]
-        line_spans.append((t0, t0 + d))
-        wavs.append(wav)
-        t0 += d
+        if ln.get("mood") == "verse":
+            bells.append(max(t0 - 0.35, 0))
+        b_start = t0
+        parts = [ln["say"]] if ln.get("mood") == "verse" or not spec.get("sentence_prosody", True) else split_sentences(ln["say"])
+        for j, sent in enumerate(parts):
+            r_adj, p_adj, v_adj = sentence_prosody(sent, j, ln.get("mood", "neutral"))
+            mp3 = os.path.join(work, f"v{i}_{j}.mp3")
+            ws = asyncio.run(tts_line(sent, voice, shift(rate, mood["rate"] + r_adj), mp3,
+                                      add_hz(mood["pitch"], p_adj), add_pct(mood["vol"], v_adj)))
+            wav = os.path.join(work, f"v{i}_{j}.wav")
+            sh("ffmpeg", "-y", "-v", "error", "-i", mp3, "-af",
+               "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06,areverse",
+               "-ar", "24000", "-ac", "1", wav)
+            ws = compress_pauses(wav, ws)
+            d = dur(wav)
+            words += [(a + t0, min(b, d) + t0, txt) for a, b, txt in ws]
+            wavs.append(wav)
+            t0 += d
+            if j + 1 < len(parts):
+                g = SENT_GAP_LONG if sent.rstrip().endswith(("?", "!", "...", "…")) else SENT_GAP
+                gp = os.path.join(work, f"sg{i}_{j}.wav")
+                sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", f"{g:.2f}", gp)
+                wavs.append(gp); t0 += g
+        line_spans.append((b_start, t0))
     total = t0 + 0.6
     spec["lines"] = lines
 
@@ -329,11 +373,28 @@ def main(spec_path, out):
     ass = os.path.join(work, "caps.ass")
     build_ass(words, spec["hook_text"], total, ass)
     bed0 = os.path.join(work, "bed0.wav")
-    ambient(total, bed0)
+    _assets = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+    mus = spec.get("music") and next((c for c in (os.path.expanduser(spec["music"]), os.path.join(_assets, spec["music"])) if os.path.exists(c)), None)
+    if mus:
+        sh("ffmpeg", "-y", "-v", "error", "-stream_loop", "-1", "-i", mus, "-t", f"{total:.2f}", "-af",
+           f"volume={spec.get('music_volume', 0.55)},afade=t=in:d=1.0,afade=t=out:st={max(total-1.5,0):.2f}:d=1.5,aformat=channel_layouts=stereo:sample_rates=44100", bed0)
+    else:
+        ambient(total, bed0)
+    sfx = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+    if os.path.exists(os.path.join(sfx, "ghanti.wav")) and spec.get("bells"):
+        b2 = os.path.join(work, "bed_b.wav")
+        evs = [(0.0, "ghanta.wav", 0.6)] + [(b, "ghanti.wav", 0.7) for b in bells]
+        ins = ["-i", bed0] + sum([["-i", os.path.join(sfx, f)] for _, f, _ in evs], [])
+        pre = ";".join(f"[{k+1}:a]volume={vol},adelay={int(t*1000)}|{int(t*1000)}[s{k}]" for k, (t, f, vol) in enumerate(evs))
+        sh("ffmpeg", "-y", "-v", "error", *ins, "-filter_complex",
+           f"{pre};[0:a]{''.join(f'[s{k}]' for k in range(len(evs)))}amix=inputs={len(evs)+1}:normalize=0:duration=first", b2)
+        bed0 = b2
     bed = os.path.join(work, "bed.wav")
     boom = os.path.join(work, "boom.wav")
     sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
        "aevalsrc='0.9*sin(2*PI*(90-60*t)*t)*exp(-4*t)':s=44100:d=1.2", "-af", "lowpass=f=300,aformat=channel_layouts=stereo", boom)
+    if spec.get("bells"):
+        hits = []
     if hits:
         ins, mix = ["-i", bed0], "[0:a]"
         for k, h in enumerate(hits):

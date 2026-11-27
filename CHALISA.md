@@ -15,6 +15,8 @@ last_day_posted: 1   (दिन 1 is already scheduled for 2026-11-28 07:00 by h
 first_automatic_date: 2026-11-29   — if today (IST) is before this date, make nothing: just message the owner "दिन 1 already scheduled" and stop.
 
 ## Episode recipe (75–100 s)
+Spec must include: "music": "tanpura_bg.mp3", "music_volume": 1.0, "bells": true (temple bells at start + before each verse card). Voice expression is automatic per sentence — write with ?, !, ... and short punchy lines where emotion should change.
+
 1. hook (own curiosity question about the day's lines, never a generic one) + "हनुमान चालीसा • दिन N" hook_text
 2. "आज के दो चौपाई" → verse card for each line pair (mood verse, slow recitation)
 3. meaning cards for difficult words; a relatable everyday example; one surprising detail/story behind the line (Ramayan reference)
