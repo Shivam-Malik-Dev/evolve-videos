@@ -103,31 +103,64 @@ async def tts_line(text, voice, rate, out, pitch="+0Hz", volume="+0%"):
 
 # ---------------- footage ----------------
 def pixabay(query, used):
+    """query 'img:krishna flute' -> vertical image, else video. Prefers hits whose tags contain ALL query words."""
     key = os.environ["PIXABAY_KEY"]
-    url = "https://pixabay.com/api/videos/?" + urllib.parse.urlencode({"key": key, "q": query, "per_page": 20, "safesearch": "true"})
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (EvolveUnfiltered bot)"})
-    hits = json.load(urllib.request.urlopen(req, context=SSL, timeout=30)).get("hits", [])
-    hits = [h for h in hits if h["id"] not in used and h["duration"] >= 4]
-    qw = set(query.lower().split())
-    good = [h for h in hits if qw & set(re.split(r"[,\s]+", h.get("tags", "").lower()))]
-    hits = good or hits
-    if not hits:
+    is_img = query.startswith("img:")
+    q = query[4:] if is_img else query
+    if is_img:
+        url = "https://pixabay.com/api/?" + urllib.parse.urlencode({"key": key, "q": q, "per_page": 40, "safesearch": "true", "orientation": "vertical", "image_type": "all"})
+    else:
+        url = "https://pixabay.com/api/videos/?" + urllib.parse.urlencode({"key": key, "q": q, "per_page": 30, "safesearch": "true"})
+    import time
+    hits = []
+    for attempt in range(4):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (EvolveUnfiltered bot)"})
+            hits = json.load(urllib.request.urlopen(req, context=SSL, timeout=30)).get("hits", [])
+            break
+        except Exception:
+            time.sleep(3 * (attempt + 1))
+    hits = [h for h in hits if h["id"] not in used and (is_img or h["duration"] >= 4)]
+    if is_img:  # no cut-out graphics: they render as black boxes with artifacts
+        hits = [h for h in hits if not h.get("type", "").startswith("vector")
+                and not (h.get("largeImageURL") or "").lower().endswith(".png")]
+    qw = set(q.lower().split())
+    tags = lambda h: set(re.split(r"[,\s]+", h.get("tags", "").lower()))
+    best = [h for h in hits if qw <= tags(h)] or [h for h in hits if qw & tags(h)] or hits
+    if not best:
         return None
-    h = random.choice(hits[:3])
+    h = random.choice(best[:4])
     used.add(h["id"])
+    if is_img:
+        return h.get("largeImageURL") or h["webformatURL"]
     v = h["videos"].get("medium") or h["videos"].get("small")
     return v["url"]
 
 
 def fetch(url, out):
-    if not os.path.exists(out):
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        open(out, "wb").write(urllib.request.urlopen(req, context=SSL, timeout=120).read())
+    import time
+    for attempt in range(4):
+        if os.path.exists(out) and os.path.getsize(out) > 0:
+            break
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            data = urllib.request.urlopen(req, context=SSL, timeout=120).read()
+            open(out, "wb").write(data)
+        except Exception:
+            time.sleep(3 * (attempt + 1))
     return out
 
 
 def make_segment(src, seconds, out):
-    """crop to 9:16, darken, slow push-in, exact length"""
+    """crop to 9:16, darken, slow push-in, exact length (video or still image)"""
+    if src.lower().endswith((".jpg", ".jpeg", ".png")):
+        frames = int(seconds * FPS) + 1
+        vf = (f"scale={W*2}:{H*2}:force_original_aspect_ratio=increase,crop={W*2}:{H*2},"
+              f"zoompan=z='1.0+0.10*on/{frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={W}x{H}:fps={FPS},"
+              f"eq=brightness=-0.03:saturation=0.95,vignette=PI/5,format=yuv420p")
+        sh("ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", src, "-t", f"{seconds:.3f}", "-vf", vf,
+           "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", out)
+        return
     vf = (f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
           f"zoompan=z='min(1.0+0.0012*on,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={FPS},"
           f"eq=brightness=-0.04:saturation=0.85:contrast=1.06,vignette=PI/5,format=yuv420p")
@@ -260,7 +293,8 @@ def main(spec_path, out):
         for k in range(n):
             q = queries[k % len(queries)]
             url = pixabay(q, used) or pixabay("dark moody", used)
-            src = fetch(url, os.path.join(work, f"src_{i}_{k}.mp4"))
+            ext = ".jpg" if q.startswith("img:") else ".mp4"
+            src = fetch(url, os.path.join(work, f"src_{i}_{k}{ext}"))
             seg = os.path.join(work, f"seg_{i}_{k}.mp4")
             make_segment(src, length / n, seg)
             segs.append(seg)
