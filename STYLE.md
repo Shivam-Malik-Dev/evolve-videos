@@ -8,6 +8,15 @@ Copy its structure, pacing and tone. Voice setup is final: `hi-IN-MadhurNeural`,
 - Story must be enjoyable for kids and adults: clear, gripping, no gore, respectful to deities and faiths.
 - Facts: research first. Legends/folk versions are said with "कहते हैं" / "कथा के अनुसार". Never invent numbers or dates.
 
+## Topic must be INTERESTING (owner's #1 rule)
+Before writing, list 5 candidate stories and score each 1–10 on: (a) surprise/twist most people don't know,
+(b) can the hook be a shocking question, (c) emotion (fear, awe, sadness, injustice), (d) would people send it to someone.
+Pick the highest total (must be ≥ 32/40). Avoid plain well-known moral tales told flatly; if a story is famous,
+tell its least-known angle (e.g. "Ravan ki wo baat jo Ram ne Lakshman ko seekhne bheja").
+The account is a STORY channel, not a devotional channel: tone = cinematic storyteller / mystery narrator, not bhajan.
+Devotional comment CTAs ("जय श्री राम") only when it fits naturally — otherwise ask an opinion question
+("तुम्हारे हिसाब से गलती किसकी थी? कमेंट में बताओ").
+
 ## Script rules (Devanagari only — Roman Hindi makes the voice mispronounce)
 1. Open with a curiosity QUESTION (hook block, 1 sentence).
 2. Always name who is speaking/acting ("श्रीकृष्ण ने कहा", "भीम का पोता") — never vague words like "भाई कहता है" without saying whose.
