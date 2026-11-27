@@ -41,7 +41,7 @@ MOODS = {  # delivery per emotional beat (relative to base rate)
 }
 
 
-def compress_pauses(wav, words, normal=0.26, dramatic=0.48):
+def compress_pauses(wav, words, comma=0.45, normal=0.34, dramatic=0.62):
     """TTS stops ~0.9s after every sentence, which sounds robotic. Shrink long silences and
     remap word timings. Pauses > 1.1s (from '...') stay a bit longer for drama."""
     import numpy as np
@@ -58,7 +58,10 @@ def compress_pauses(wav, words, normal=0.26, dramatic=0.48):
             while j < n and silent[j]:
                 j += 1
             run = (j - i) * hop / sr
-            target = dramatic if run > 1.1 else normal
+            if run <= comma:          # comma / breath: keep as is
+                i = j
+                continue
+            target = dramatic if run > 1.1 else normal  # '...' vs full stop
             if run > target + 0.05 and i > 0 and j < n:
                 rm = run - target
                 a = int((i * hop) + target / 2 * sr)
@@ -207,7 +210,7 @@ def main(spec_path, out):
 
     # 1. voice: one TTS call per emotional block (several sentences) so speech flows naturally
     lines = spec.get("blocks") or spec["lines"]
-    words, t0, line_spans, wavs = [], 0.0, [], []
+    words, t0, line_spans, wavs, hits = [], 0.0, [], [], []
     for i, ln in enumerate(lines):
         mood = MOODS.get(ln.get("mood", "neutral"), MOODS["neutral"])
         pause = ln.get("pause_before", mood["pause"] if i else 0.0)
@@ -216,6 +219,8 @@ def main(spec_path, out):
             sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", f"{pause:.2f}", gap)
             wavs.append(gap)
             t0 += pause
+        if ln.get("mood") in ("shock", "hook"):
+            hits.append(max(t0 - 0.12, 0))
         mp3 = os.path.join(work, f"v{i}.mp3")
         ws = asyncio.run(tts_line(ln["say"], voice, shift(rate, mood["rate"]), mp3, mood["pitch"], mood["vol"]))
         wav = os.path.join(work, f"v{i}.wav")
@@ -267,8 +272,22 @@ def main(spec_path, out):
     # 4. captions + music + final mix
     ass = os.path.join(work, "caps.ass")
     build_ass(words, spec["hook_text"], total, ass)
+    bed0 = os.path.join(work, "bed0.wav")
+    ambient(total, bed0)
     bed = os.path.join(work, "bed.wav")
-    ambient(total, bed)
+    boom = os.path.join(work, "boom.wav")
+    sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
+       "aevalsrc='0.9*sin(2*PI*(90-60*t)*t)*exp(-4*t)':s=44100:d=1.2", "-af", "lowpass=f=300,aformat=channel_layouts=stereo", boom)
+    if hits:
+        ins, mix = ["-i", bed0], "[0:a]"
+        for k, h in enumerate(hits):
+            ins += ["-i", boom]
+            mix += f"[b{k}]"
+        pre = ";".join(f"[{k+1}:a]adelay={int(h*1000)}|{int(h*1000)}[b{k}]" for k, h in enumerate(hits))
+        sh("ffmpeg", "-y", "-v", "error", *ins, "-filter_complex",
+           f"{pre};{mix}amix=inputs={len(hits)+1}:normalize=0:duration=first", bed)
+    else:
+        bed = bed0
     sh("ffmpeg", "-y", "-v", "error", "-i", base, "-i", voice_wav, "-i", bed,
        "-filter_complex",
        f"[0:v]ass={ass}:fontsdir={FONT_DIR},fade=in:st=0:d=0.25[v];"
