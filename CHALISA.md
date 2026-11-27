@@ -14,14 +14,14 @@ After दिन 22 → start Gita series (GITA.md, to be written then): Chapter 
 last_day_posted: 1   (दिन 1 is already scheduled for 2026-11-28 07:00 by hand)
 first_automatic_date: 2026-11-29   — if today (IST) is before this date, make nothing: just message the owner "दिन 1 already scheduled" and stop.
 
-## Voice engine (owner-approved 2026-11-27): Indic Parler-TTS, speaker Rohit
+## Voice engine (owner-approved 2026-11-27): Indic Parler-TTS, speaker Aman
 Setup (in addition to RUNBOOK §1): `pip install --break-system-packages -q torch "protobuf>=5.26" git+https://github.com/huggingface/parler-tts.git`
 and export HF_TOKEN (given in the task prompt). First run downloads ~3.7 GB. Rendering ≈ 20 min for a 95 s reel: run
 make_reel.py with nohup in the background and poll. If Parler fails (install/token/timeout), fall back to the Edge voice by
 removing "engine"/"speaker" from the spec, and tell the owner.
 
 ## Episode recipe (75–100 s)
-Spec must include: "engine": "parler", "speaker": "Rohit", "music": "devotional_bg.mp3", "music_volume": 0.9, "bells": true (temple bells at start + before each verse card). Voice expression is automatic per sentence — write with ?, !, ... and short punchy lines where emotion should change.
+Spec must include: "engine": "parler", "speaker": "Aman", "music": "devotional_bg.mp3", "music_volume": 0.9, "bells": true (temple bells at start + before each verse card). Voice expression is automatic per sentence — write with ?, !, ... and short punchy lines where emotion should change.
 
 1. hook (own curiosity question about the day's lines, never a generic one) + "हनुमान चालीसा • दिन N" hook_text
 2. "आज के दो चौपाई" → verse card for each line pair (mood verse, slow recitation)
