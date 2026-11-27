@@ -15,7 +15,7 @@ export PIXABAY_KEY=...   # given in the task prompt, never commit it
 If edge-tts or Pixabay give SSL errors, the proxy CA is at ~/.ccr/ca-bundle.crt (make_reel.py already uses it if present).
 
 ## 2. Pick topic
-Read STYLE.md, CONTENT_PLAN.md, topics_done.md. Choose the next phase-1 topic not already done
+Read STYLE.md, CONTENT_PLAN.md, topics_done.md and LEARNINGS.md (weekly data-driven rules; they override defaults). Choose the next phase-1 topic not already done
 (alternate Ramayan / Mahabharat vs. the last entry). Research it with web search before writing.
 
 ## 3. Write spec

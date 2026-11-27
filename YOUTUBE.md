@@ -18,6 +18,10 @@ Nirma vs HUL, Kingfisher/Vijay Mallya, Jet Airways, Byju's rise & fall, Sahara, 
 Tata Nano, Paytm, Zomato IPO, Nokia in India, Maggi ban 2015, Hindenburg vs Adani (stick strictly to documented facts).
 Never repeat a topic in yt_topics_done.md. Standalone Shorts: one surprising money/business fact or mini-story with a twist.
 
+## Learnings
+Before choosing a topic or writing, read LEARNINGS.md (updated weekly from real view data) and follow it — it overrides defaults here.
+Standalone Shorts: rate "+20%".
+
 ## Safety rules (copyright + legal)
 - Only Pixabay footage/images (royalty-free), our own generated graphics (tools/viz.py) and generated music. NEVER use film/TV/news
   clips, songs, logos as main visuals, or photos of real people.
@@ -28,7 +32,7 @@ Never repeat a topic in yt_topics_done.md. Standalone Shorts: one surprising mon
 ## Long video recipe
 1. Setup as RUNBOOK.md §1. Research the topic (web search; at least 3 sources). Note exact numbers/dates.
 2. Write specs/youtube/YYYY-MM-DD_<slug>.json like harshad_mehta.json: hook intro (question / shocking fact), 5–6 chapters,
-   ~1,450–1,700 words total, rate "+0%", simple analogies, twist, lesson, comment question CTA. 30–40% of blocks use "viz"
+   ~1,700–1,900 words total, rate "+10%" (owner: voice must be a bit faster), simple analogies, twist, lesson, comment question CTA. 30–40% of blocks use "viz"
    (chart / flow / headline / text) for numbers, mechanisms, dates. Broll queries India-specific ("india city", "mumbai",
    "indian rupee", "india people", "stock market", "india night"...). Add "avoid_tags": ["aarti","temple","religion","wedding","hindu"] for business topics.
 3. `python3 tools/make_doc.py <spec> /tmp/long.mp4` (takes ~20 min; run it with nohup in background and poll). Must be ≥ 8:10.
@@ -37,7 +41,7 @@ Never repeat a topic in yt_topics_done.md. Standalone Shorts: one surprising mon
    `python3 tools/thumbnail.py bg.png thumb.png "<BIG LINE ≤12 chars>" "<line 2>" "<red tag>" down|up|none`.
    Prepend it as a 1-second first frame (see below) so thumbnailOffset 500 shows it.
    ffmpeg: make 1 s clip from thumb.png (+silent stereo 44.1k), concat with the video (re-encode crf 25, maxrate 1400k).
-5. Teaser Short: spec like harshad_short.json (35–45 s, cliffhanger, CTA "पूरी कहानी हमारे चैनल पर"), render with tools/make_reel.py.
+5. Teaser Short: spec like harshad_short.json but rate "+20%" (35–45 s, cliffhanger, CTA "पूरी कहानी हमारे चैनल पर"), render with tools/make_reel.py.
 6. Upload: `tools/publish_media.sh /tmp/YYYY-MM-DD_<slug>.mp4 /tmp/YYYY-MM-DD_<slug>-short.mp4` → raw URLs (must print 200/206).
 7. Buffer create_post (YouTube): long = type regularVideo, title (≤100 chars, English keyword + Hindi hook), categoryId "27",
    privacy public, madeForKids false, isAiGenerated true, assets video thumbnailOffset 500, mode shareNow.
