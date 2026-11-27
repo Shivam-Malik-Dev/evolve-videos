@@ -102,6 +102,10 @@ async def tts_line(text, voice, rate, out, pitch="+0Hz", volume="+0%"):
 
 
 # ---------------- footage ----------------
+AVOID_TAGS = {"dollar", "dollars", "euro", "euros", "usa", "america", "american", "korea", "korean", "seoul",
+              "china", "chinese", "japan", "tokyo", "york", "christmas", "halloween", "bitcoin", "crypto", "chroma", "greenscreen", "green-screen", "chromakey"}
+
+
 def pixabay(query, used):
     """query 'img:krishna flute' -> vertical image, else video. Prefers hits whose tags contain ALL query words."""
     key = os.environ["PIXABAY_KEY"]
@@ -126,6 +130,7 @@ def pixabay(query, used):
                 and not (h.get("largeImageURL") or "").lower().endswith(".png")]
     qw = set(q.lower().split())
     tags = lambda h: set(re.split(r"[,\s]+", h.get("tags", "").lower()))
+    hits = [h for h in hits if not (AVOID_TAGS & tags(h))]
     best = [h for h in hits if qw <= tags(h)] or [h for h in hits if qw & tags(h)] or hits
     if not best:
         return None
