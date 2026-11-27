@@ -11,7 +11,8 @@ illustrations by id. Never copy other channels' hooks, captions, art or wording 
 After दिन 22 → start Gita series (GITA.md, to be written then): Chapter 1 from verse 1, 1–2 shlokas per day, same format.
 
 ## Progress (update after each post)
-last_day_posted: 1
+last_day_posted: 1   (दिन 1 is already scheduled for 2026-11-28 07:00 by hand)
+first_automatic_date: 2026-11-29   — if today (IST) is before this date, make nothing: just message the owner "दिन 1 already scheduled" and stop.
 
 ## Episode recipe (75–100 s)
 1. hook (own curiosity question about the day's lines, never a generic one) + "हनुमान चालीसा • दिन N" hook_text
