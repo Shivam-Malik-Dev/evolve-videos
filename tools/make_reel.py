@@ -30,10 +30,59 @@ def dur(p):
 
 
 # ---------------- voice ----------------
-async def tts_line(text, voice, rate, out):
+MOODS = {  # delivery per emotional beat (relative to base rate)
+    "hook":    {"rate": +4,  "pitch": "+2Hz", "vol": "+10%", "pause": 0.0},
+    "neutral": {"rate": 0,   "pitch": "+0Hz", "vol": "+0%",  "pause": 0.15},
+    "tense":   {"rate": -6,  "pitch": "-3Hz", "vol": "-5%",  "pause": 0.30},
+    "shock":   {"rate": +8,  "pitch": "+4Hz", "vol": "+15%", "pause": 0.45},
+    "sad":     {"rate": -12, "pitch": "-6Hz", "vol": "-12%", "pause": 0.35},
+    "warm":    {"rate": -4,  "pitch": "+0Hz", "vol": "+0%",  "pause": 0.25},
+    "cta":     {"rate": +2,  "pitch": "+1Hz", "vol": "+5%",  "pause": 0.30},
+}
+
+
+def compress_pauses(wav, words, normal=0.26, dramatic=0.48):
+    """TTS stops ~0.9s after every sentence, which sounds robotic. Shrink long silences and
+    remap word timings. Pauses > 1.1s (from '...') stay a bit longer for drama."""
+    import numpy as np
+    raw = subprocess.check_output(["ffmpeg", "-v", "error", "-i", wav, "-f", "s16le", "-ac", "1", "-ar", "24000", "-"])
+    x = np.frombuffer(raw, dtype=np.int16).astype(np.float32)
+    sr, hop = 24000, 240  # 10 ms
+    n = len(x) // hop
+    rms = np.sqrt(np.mean(x[: n * hop].reshape(n, hop) ** 2, axis=1) + 1e-9)
+    silent = 20 * np.log10(rms / 32768 + 1e-12) < -42
+    keep, cuts, i = np.ones(len(x), bool), [], 0  # cuts: (start_s, removed_s)
+    while i < n:
+        if silent[i]:
+            j = i
+            while j < n and silent[j]:
+                j += 1
+            run = (j - i) * hop / sr
+            target = dramatic if run > 1.1 else normal
+            if run > target + 0.05 and i > 0 and j < n:
+                rm = run - target
+                a = int((i * hop) + target / 2 * sr)
+                keep[a: a + int(rm * sr)] = False
+                cuts.append((a / sr, rm))
+            i = j
+        else:
+            i += 1
+    y = x[keep].astype(np.int16)
+    def remap(t):
+        return t - sum(rm for st, rm in cuts if st < t)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "s16le", "-ar", "24000", "-ac", "1", "-i", "-", wav],
+                   input=y.tobytes(), check=True)
+    return [(remap(a), remap(b), t) for a, b, t in words]
+
+
+def shift(rate, delta):
+    return f"{int(rate.strip('%')) + delta:+d}%"
+
+
+async def tts_line(text, voice, rate, out, pitch="+0Hz", volume="+0%"):
     for attempt in range(6):
         try:
-            comm = edge_tts.Communicate(text, voice, rate=rate, boundary="WordBoundary")
+            comm = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, volume=volume, boundary="WordBoundary")
             audio, words = b"", []
             async for ch in comm.stream():
                 if ch["type"] == "audio":
@@ -156,36 +205,49 @@ def main(spec_path, out):
     os.makedirs(work, exist_ok=True)
     random.seed(spec.get("seed", 7))
 
-    # 1. voice per line + global word timeline
+    # 1. voice: one TTS call per emotional block (several sentences) so speech flows naturally
+    lines = spec.get("blocks") or spec["lines"]
     words, t0, line_spans, wavs = [], 0.0, [], []
-    for i, ln in enumerate(spec["lines"]):
+    for i, ln in enumerate(lines):
+        mood = MOODS.get(ln.get("mood", "neutral"), MOODS["neutral"])
+        pause = ln.get("pause_before", mood["pause"] if i else 0.0)
+        if pause:
+            gap = os.path.join(work, f"gap{i}.wav")
+            sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", f"{pause:.2f}", gap)
+            wavs.append(gap)
+            t0 += pause
         mp3 = os.path.join(work, f"v{i}.mp3")
-        ws = asyncio.run(tts_line(ln["say"], voice, rate, mp3))
-        d = dur(mp3)
-        words += [(a + t0, b + t0, txt) for a, b, txt in ws]
-        line_spans.append((t0, t0 + d + GAP))
+        ws = asyncio.run(tts_line(ln["say"], voice, shift(rate, mood["rate"]), mp3, mood["pitch"], mood["vol"]))
         wav = os.path.join(work, f"v{i}.wav")
-        sh("ffmpeg", "-y", "-v", "error", "-i", mp3, "-ar", "24000", "-ac", "1", wav)
+        # keep natural internal pauses, trim only the long tail silence
+        sh("ffmpeg", "-y", "-v", "error", "-i", mp3, "-af",
+           "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.08,areverse",
+           "-ar", "24000", "-ac", "1", wav)
+        ws = compress_pauses(wav, ws)
+        d = dur(wav)
+        words += [(a + t0, min(b, d) + t0, txt) for a, b, txt in ws]
+        line_spans.append((t0, t0 + d))
         wavs.append(wav)
-        t0 += d + GAP
-    total = t0 + 0.4
+        t0 += d
+    total = t0 + 0.6
+    spec["lines"] = lines
 
     # 2. voice track
     lst = os.path.join(work, "v.txt")
-    sil = os.path.join(work, "gap.wav")
-    sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", f"anullsrc=r=24000:cl=mono", "-t", str(GAP), sil)
     with open(lst, "w") as f:
         for w_ in wavs:
-            f.write(f"file '{w_}'\nfile '{sil}'\n")
+            f.write(f"file '{w_}'\n")
     voice_wav = os.path.join(work, "voice.wav")
     sh("ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst,
-       "-af", "highpass=f=70,acompressor=threshold=-18dB:ratio=3:attack=5:release=80,loudnorm=I=-14:TP=-1.5:LRA=7",
+       "-af", "highpass=f=70,acompressor=threshold=-18dB:ratio=3:attack=5:release=80,loudnorm=I=-14:TP=-1.5:LRA=9",
        "-ar", "44100", "-ac", "2", voice_wav)
 
     # 3. footage: a cut every ~2.5-3.5s, query rotates within line
     used, segs = set(), []
     for i, (ln, (a, b)) in enumerate(zip(spec["lines"], line_spans)):
-        if i == len(spec["lines"]) - 1:
+        if i + 1 < len(line_spans):
+            b = line_spans[i + 1][0]
+        else:
             b = total
         length = b - a
         n = max(1, round(length / 3.0))
