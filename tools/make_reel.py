@@ -38,6 +38,7 @@ MOODS = {  # delivery per emotional beat (relative to base rate)
     "sad":     {"rate": -12, "pitch": "-6Hz", "vol": "-12%", "pause": 0.35},
     "warm":    {"rate": -4,  "pitch": "+0Hz", "vol": "+0%",  "pause": 0.25},
     "cta":     {"rate": +2,  "pitch": "+1Hz", "vol": "+5%",  "pause": 0.30},
+    "verse":   {"rate": -22, "pitch": "-2Hz", "vol": "+0%",  "pause": 0.40},
 }
 
 
@@ -140,6 +141,13 @@ def pixabay(query, used):
         return h.get("largeImageURL") or h["webformatURL"]
     v = h["videos"].get("medium") or h["videos"].get("small")
     return v["url"]
+
+
+def pix_id(pid):
+    url = "https://pixabay.com/api/?" + urllib.parse.urlencode({"key": os.environ["PIXABAY_KEY"], "id": pid})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (EvolveUnfiltered bot)"})
+    h = json.load(urllib.request.urlopen(req, context=SSL, timeout=30))["hits"][0]
+    return h.get("largeImageURL") or h["webformatURL"]
 
 
 def fetch(url, out):
@@ -294,12 +302,20 @@ def main(spec_path, out):
         else:
             b = total
         length = b - a
+        if ln.get("viz"):
+            import viz
+            viz.set_size(W, H)
+            seg = os.path.join(work, f"viz_{i}.mp4"); viz.render(ln["viz"], length, seg); segs.append(seg)
+            continue
         n = max(1, round(length / 3.0))
         queries = ln.get("broll", ["dark night"])
         for k in range(n):
             q = queries[k % len(queries)]
-            url = pixabay(q, used) or pixabay("dark moody", used)
-            ext = ".jpg" if q.startswith("img:") else ".mp4"
+            if q.startswith("id:"):
+                url = pix_id(q[3:])
+            else:
+                url = pixabay(q, used) or pixabay("dark moody", used)
+            ext = ".jpg" if q.startswith(("img:", "id:")) else ".mp4"
             src = fetch(url, os.path.join(work, f"src_{i}_{k}{ext}"))
             seg = os.path.join(work, f"seg_{i}_{k}.mp4")
             make_segment(src, length / n, seg)

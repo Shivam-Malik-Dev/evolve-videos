@@ -155,3 +155,120 @@ def render(spec, seconds, out):
     for f in range(n):
         enc.stdin.write(fn(spec, f / max(n - 1, 1), base).tobytes())
     enc.stdin.close(); enc.wait()
+
+
+# ---------------- vertical (9:16) devotional explainer cards ----------------
+INDIGO = (14, 16, 44)
+SAFFRON = (255, 153, 51)
+CREAM = (255, 240, 214)
+
+
+def night_bg():
+    im = Image.new("RGB", (W, H), INDIGO)
+    g = Image.new("RGB", (W, H), (0, 0, 0))
+    ImageDraw.Draw(g).ellipse([-W * 0.3, -H * 0.15, W * 1.3, H * 0.55], fill=(120, 55, 10))
+    im = Image.blend(im, g.filter(ImageFilter.GaussianBlur(260)), 0.45)
+    d = ImageDraw.Draw(im)
+    import random
+    rnd = random.Random(5)
+    for _ in range(140):
+        x, y, r = rnd.randrange(W), rnd.randrange(int(H * 0.75)), rnd.choice([1, 1, 2, 3])
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 235, 200))
+    return im
+
+
+def flame(d, cx, cy, s, t):
+    f = 1 + 0.06 * math.sin(t * 9)
+    d.ellipse([cx - 70 * s, cy - 10 * s, cx + 70 * s, cy + 40 * s], fill=(170, 90, 30))
+    d.polygon([(cx - 22 * s, cy), (cx, cy - 95 * s * f), (cx + 22 * s, cy)], fill=(255, 170, 40))
+    d.polygon([(cx - 10 * s, cy), (cx, cy - 55 * s * f), (cx + 10 * s, cy)], fill=(255, 245, 200))
+
+
+def draw_verse(spec, p, base):
+    im = base.copy()
+    glow = Image.new("RGB", (W, H), (0, 0, 0))
+    ImageDraw.Draw(glow).ellipse([W * 0.15, H * 0.12, W * 0.85, H * 0.62], fill=(110, 60, 15))
+    im = Image.blend(im, glow.filter(ImageFilter.GaussianBlur(120)), 0.5)
+    d = ImageDraw.Draw(im)
+    lines = spec["lines"]
+    vf = F(BOLD, spec.get("size", 64))
+    cw = int(W * 0.86); x0 = (W - cw) // 2
+    lh = int(spec.get("size", 64) * 1.55)
+    ch = 170 + lh * len(lines) + 60
+    y0 = int(H * 0.40 - ch / 2)
+    a = ease(p / 0.15)
+    d.rounded_rectangle([x0, y0, x0 + cw, y0 + ch], radius=36, fill=(30, 18, 10), outline=SAFFRON, width=6)
+    d.rounded_rectangle([x0 + 16, y0 + 16, x0 + cw - 16, y0 + ch - 16], radius=26, outline=(140, 80, 30), width=2)
+    tag = spec.get("label", "")
+    if tag:
+        tf = F(BOLD, 48); tw = d.textlength(tag, font=tf)
+        d.rounded_rectangle([W / 2 - tw / 2 - 34, y0 - 40, W / 2 + tw / 2 + 34, y0 + 40], radius=40, fill=SAFFRON)
+        ctext(d, (W / 2, y0), tag, tf, (40, 15, 0))
+    k = ease((p - 0.05) / 0.6) * len(lines)
+    for i, ln in enumerate(lines):
+        if k > i:
+            ctext(d, (W / 2, y0 + 120 + i * lh), ln, vf, CREAM)
+    flame(d, W / 2, y0 + ch + 105, 0.8, p * 10)
+    return im
+
+
+def draw_meaning(spec, p, base):
+    im = base.copy(); d = ImageDraw.Draw(im)
+    if spec.get("title"):
+        ctext(d, (W / 2, int(H * 0.13)), spec["title"], F(BOLD, 64), SAFFRON)
+    items = spec["items"]
+    k = ease(p / 0.8) * len(items)
+    wf, mf = F(BOLD, 66), F(SEMI, 54)
+    top = int(H * 0.20); rh = min(170, int(H * 0.40 / max(len(items), 1)))
+    for i, (w, m) in enumerate(items):
+        if k > i:
+            y = top + i * rh
+            d.rounded_rectangle([70, y, W - 70, y + rh - 26], radius=28, fill=(28, 26, 60), outline=(90, 80, 150), width=3)
+            d.text((110, y + (rh - 26) / 2), w, font=wf, fill=SAFFRON, anchor="lm")
+            d.text((W - 110, y + (rh - 26) / 2), m, font=mf, fill=CREAM, anchor="rm")
+    if spec.get("note") and p > 0.75:
+        ctext(d, (W / 2, int(H * 0.20) + len(items) * rh + 60), spec["note"], F(BOLD, 58), (255, 220, 120))
+    return im
+
+
+def draw_bigtext(spec, p, base):
+    im = base.copy(); d = ImageDraw.Draw(im)
+    a = ease(p / 0.25)
+    sz = spec.get("size", 104)
+    for i, ln in enumerate(spec["text"].split("\n")):
+        ctext(d, (W / 2, int(H * 0.30) + i * int(sz * 1.35)), ln, F(BOLD, sz), CREAM if i else SAFFRON)
+    if spec.get("sub") and p > 0.35:
+        ctext(d, (W / 2, int(H * 0.30) + len(spec["text"].split("\n")) * int(sz * 1.35) + 40), spec["sub"], F(SEMI, 56), (220, 215, 240))
+    if spec.get("cross") and p > 0.5:
+        for i, it in enumerate(spec["cross"]):
+            y = int(H * 0.50) + i * 110
+            ctext(d, (W / 2, y), it, F(BOLD, 64), (200, 200, 200))
+            tw = d.textlength(it, font=F(BOLD, 64))
+            d.line([(W / 2 - tw / 2 - 10, y), (W / 2 + tw / 2 + 10, y)], fill=(235, 50, 50), width=10)
+    return im
+
+
+DRAW.update({"verse": draw_verse, "meaning": draw_meaning, "bigtext": draw_bigtext})
+
+
+def set_size(w, h):
+    global W, H
+    W, H = w, h
+
+
+_orig_render = render
+
+
+def render(spec, seconds, out):  # noqa: F811  (vertical specs use the night background)
+    if spec["type"] in ("verse", "meaning", "bigtext"):
+        base = night_bg()
+        n = int(seconds * FPS) + 1
+        enc = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
+                                "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-t", f"{seconds:.3f}", out],
+                               stdin=subprocess.PIPE)
+        fn = DRAW[spec["type"]]
+        for f in range(n):
+            enc.stdin.write(fn(spec, f / max(n - 1, 1), base).tobytes())
+        enc.stdin.close(); enc.wait()
+        return
+    _orig_render(spec, seconds, out)

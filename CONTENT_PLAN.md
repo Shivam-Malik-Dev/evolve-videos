@@ -8,8 +8,8 @@ Pick lesser-known but gripping stories with a twist. Examples of the kind wanted
 - Ramayan: Shabari's ber, Jatayu, Kumbhakarna's sleep, Hanuman lifting Sanjeevani mountain, Ram Setu & floating stones,
   Lakshman rekha, Vibhishana leaving Lanka, Angad's foot in Ravan's court, Sulochana, Urmila's sleep.
 
-## Phase 2 — LATER (owner will say when; do NOT start on your own)
-Hanuman Chalisa series: 2 lines per reel, in order, with meaning explained in detail. Episode numbering "भाग 1, 2, 3...".
+## Phase 2 — STARTED 2026-11-28 as a SEPARATE morning reel (07:00 IST) — see CHALISA.md
+The evening story reel (19:00) continues in parallel.
 
 ## Phase 3 — after Chalisa finishes
 Bhagavad Gita series from Chapter 1 Verse 1, same format.
