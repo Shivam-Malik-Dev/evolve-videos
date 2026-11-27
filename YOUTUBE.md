@@ -6,7 +6,7 @@ Teaser-short reference: specs/youtube/harshad_short.json
 
 ## What to make (by weekday, IST)
 - **Tuesday, Thursday, Saturday** → ONE long video (8.5–10 min) + ONE teaser Short for it.
-  Long video publishes 18:00 IST, teaser Short 19:30 IST.
+  Long video publishes as soon as it is ready (task starts 17:07 IST → shareNow ≈ 17:45–18:15), teaser Short customScheduled 19:30 IST.
 - **Sunday, Monday, Wednesday, Friday** → ONE standalone Short (30–50 s), publishes 18:30 IST.
 
 ## Niche & topics (owner chose: "paise aur business ki kahaniyan")
@@ -40,8 +40,12 @@ Never repeat a topic in yt_topics_done.md. Standalone Shorts: one surprising mon
 5. Teaser Short: spec like harshad_short.json (35–45 s, cliffhanger, CTA "पूरी कहानी हमारे चैनल पर"), render with tools/make_reel.py.
 6. Upload: `tools/publish_media.sh /tmp/YYYY-MM-DD_<slug>.mp4 /tmp/YYYY-MM-DD_<slug>-short.mp4` → raw URLs (must print 200/206).
 7. Buffer create_post (YouTube): long = type regularVideo, title (≤100 chars, English keyword + Hindi hook), categoryId "27",
-   privacy public, madeForKids false, isAiGenerated true, assets video thumbnailOffset 500, customScheduled 18:00 IST.
+   privacy public, madeForKids false, isAiGenerated true, assets video thumbnailOffset 500, mode shareNow.
    Description: 2-line summary, what you'll learn, ⏱️ chapters from the *_chapters.txt file (+1 s shift because of the thumbnail
    frame), comment question, subscribe line, 📚 sources, ⚠️ disclaimer, 5–8 hashtags.
    Teaser short = type short, customScheduled 19:30 IST, title ends with #shorts.
+7b. Custom thumbnail: poll Buffer get_post until status sent and externalLink has the YouTube videoId, then upload the
+   1280x720 thumbnail with tools/publish_media.sh (name YYYY-MM-DD_<slug>-thumb.png) and call vidIQ
+   vidiq_update_video_thumbnail(channelId "UCiGqUtRH0SXG-AVlFZC5X1Q", videoId, thumbnail=<raw URL>) — 5 credits.
+   If vidIQ says verification_required or credits are out, skip and send the thumbnail to the owner instead.
 8. Append to yt_topics_done.md, commit specs + log to main (not the videos). Report to owner with SendUserMessage + SendUserFile (thumbnail).
