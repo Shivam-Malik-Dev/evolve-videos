@@ -245,6 +245,7 @@ def main(spec_path, out):
     work = os.path.splitext(os.path.abspath(out))[0] + "_work"
     os.makedirs(work, exist_ok=True)
     random.seed(spec.get("seed", 7))
+    AVOID_TAGS.update(spec.get("avoid_tags", []))
 
     # 1. voice: one TTS call per emotional block (several sentences) so speech flows naturally
     lines = spec.get("blocks") or spec["lines"]

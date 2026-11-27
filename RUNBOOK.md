@@ -30,13 +30,13 @@ Fix bad visuals (change queries/seed) and re-render. Check duration is 50–75 s
 
 ## 5. Publish
 ```bash
-cp /tmp/out.mp4 videos/YYYY-MM-DD_<slug>.mp4
-# append a line to topics_done.md (date — topic — reel link added after posting)
+cp /tmp/out.mp4 /tmp/YYYY-MM-DD_<slug>.mp4
+tools/publish_media.sh /tmp/YYYY-MM-DD_<slug>.mp4      # uploads to the history-free "media" branch, prints raw URL + 200/206
+# append a line to topics_done.md, commit the spec + log to main (NOT the video)
 git add -A && git commit -m "Reel YYYY-MM-DD: <topic>" && git -c push.negotiate=true push
-curl -s -o /dev/null -w "%{http_code}" https://raw.githubusercontent.com/Shivam-Malik-Dev/evolve-videos/main/videos/<file>.mp4   # must be 200
 ```
 Buffer `create_post`: channelId 6b092d878541f09ecbbde431, schedulingType automatic, mode customScheduled,
-dueAt = today 19:00 IST (+05:30) (if already past, shareNow), assets [{video:{url, metadata:{thumbnailOffset:1500}}}],
+dueAt = today 19:00 IST (+05:30) (if already past, shareNow), assets [{video:{url (the media-branch raw URL), metadata:{thumbnailOffset:1500}}}],
 metadata.instagram = {type: reel, shouldShareToFeed: true, isAiGenerated: true}, caption per STYLE.md.
 
 ## 6. Report
