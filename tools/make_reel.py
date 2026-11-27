@@ -304,8 +304,24 @@ def main(spec_path, out):
         if ln.get("mood") == "verse":
             bells.append(max(t0 - 0.35, 0))
         b_start = t0
-        parts = [ln["say"]] if ln.get("mood") == "verse" or not spec.get("sentence_prosody", True) else split_sentences(ln["say"])
+        if spec.get("engine") == "parler":
+            parts = split_sentences(ln["say"])
+        else:
+            parts = [ln["say"]] if ln.get("mood") == "verse" or not spec.get("sentence_prosody", True) else split_sentences(ln["say"])
         for j, sent in enumerate(parts):
+            wav = os.path.join(work, f"v{i}_{j}.wav")
+            if spec.get("engine") == "parler":
+                import parler_engine
+                ws = parler_engine.say(sent, ln.get("mood", "neutral"), spec.get("speaker", "Rohit"), wav)
+                d = dur(wav)
+                words += [(a + t0, min(b, d) + t0, txt) for a, b, txt in ws]
+                wavs.append(wav); t0 += d
+                if j + 1 < len(parts):
+                    g = SENT_GAP_LONG if sent.rstrip().endswith(("?", "!", "...", "…")) else SENT_GAP
+                    gp = os.path.join(work, f"sg{i}_{j}.wav")
+                    sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", f"{g:.2f}", gp)
+                    wavs.append(gp); t0 += g
+                continue
             r_adj, p_adj, v_adj = sentence_prosody(sent, j, ln.get("mood", "neutral"))
             mp3 = os.path.join(work, f"v{i}_{j}.mp3")
             ws = asyncio.run(tts_line(sent, voice, shift(rate, mood["rate"] + r_adj), mp3,

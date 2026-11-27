@@ -140,7 +140,9 @@
    }
   }
  ],
- "music": "tanpura_bg.mp3",
- "music_volume": 1.0,
- "bells": true
+ "music": "devotional_bg.mp3",
+ "music_volume": 0.9,
+ "bells": true,
+ "engine": "parler",
+ "speaker": "Rohit"
 }
