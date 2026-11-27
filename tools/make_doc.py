@@ -58,6 +58,7 @@ def main(spec_path, out):
     work = os.path.splitext(os.path.abspath(out))[0] + "_work"
     os.makedirs(work, exist_ok=True)
     random.seed(spec.get("seed", 3))
+    R.AVOID_TAGS |= set(spec.get("avoid_tags", []))
     sil = lambda sec, name: (R.sh("ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", f"{sec:.2f}",
                                   os.path.join(work, name)), os.path.join(work, name))[1]
 
