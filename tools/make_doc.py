@@ -75,17 +75,33 @@ def main(spec_path, out):
                 wavs.append(sil(mood["pause"], f"p{bi}.wav")); t += mood["pause"]
             if b.get("mood") in ("shock", "hook"):
                 hits.append(max(t - 0.12, 0))
-            mp3 = os.path.join(work, f"v{bi}.mp3")
-            ws = asyncio.run(R.tts_line(b["say"], voice, R.shift(rate, mood["rate"]), mp3, mood["pitch"], mood["vol"]))
-            wav = os.path.join(work, f"v{bi}.wav")
-            R.sh("ffmpeg", "-y", "-v", "error", "-i", mp3, "-af",
-                 "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.08,areverse", "-ar", "24000", "-ac", "1", wav)
-            ws = R.compress_pauses(wav, ws, normal=0.32, dramatic=0.55)
-            d = R.dur(wav)
-            words += [(a + t, b_ + t, x) for a, b_, x in ws]
+            b_start = t
+            if spec.get("engine") == "parler":
+                import parler_engine
+                parts = R.split_sentences(b["say"])
+                for j, sent in enumerate(parts):
+                    wav = os.path.join(work, f"v{bi}_{j}.wav")
+                    ws = parler_engine.say(sent, b.get("mood", "neutral"), spec.get("speaker", "Aman"), wav)
+                    d = R.dur(wav)
+                    words += [(a + t, b_ + t, x) for a, b_, x in ws]
+                    wavs.append(wav); t += d
+                    if j + 1 < len(parts):
+                        g = R.SENT_GAP_LONG if sent.rstrip().endswith(("?", "!", "...", "…")) else R.SENT_GAP
+                        wavs.append(sil(g, f"sg{bi}_{j}.wav")); t += g
+                d = t - b_start; t = b_start
+            else:
+                mp3 = os.path.join(work, f"v{bi}.mp3")
+                ws = asyncio.run(R.tts_line(b["say"], voice, R.shift(rate, mood["rate"]), mp3, mood["pitch"], mood["vol"]))
+                wav = os.path.join(work, f"v{bi}.wav")
+                R.sh("ffmpeg", "-y", "-v", "error", "-i", mp3, "-af",
+                     "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.08,areverse", "-ar", "24000", "-ac", "1", wav)
+                ws = R.compress_pauses(wav, ws, normal=0.32, dramatic=0.55)
+                d = R.dur(wav)
+                words += [(a + t, b_ + t, x) for a, b_, x in ws]
+                wavs.append(wav)
             if b.get("card") and not b.get("viz"):
                 cards.append((t + 0.3, min(t + d, t + 5.5), b["card"]))
-            spans.append((b, t, t + d)); wavs.append(wav); t += d; bi += 1
+            spans.append((b, t, t + d)); t += d; bi += 1
     total = t + 2.0
     wavs.append(sil(2.0, "tail.wav"))
     lst = os.path.join(work, "v.txt"); open(lst, "w").write("".join(f"file '{w}'\n" for w in wavs))
@@ -158,7 +174,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     ass = os.path.join(work, "caps.ass"); open(ass, "w", encoding="utf-8").write(head + "\n".join(ev) + "\n")
 
     # 4. music bed + mix
-    bed0 = os.path.join(work, "bed0.wav"); R.ambient(total, bed0)
+    bed0 = os.path.join(work, "bed0.wav")
+    _assets = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+    mus = spec.get("music") and next((c for c in (os.path.expanduser(spec["music"]), os.path.join(_assets, spec["music"])) if os.path.exists(c)), None)
+    if mus:
+        R.sh("ffmpeg", "-y", "-v", "error", "-stream_loop", "-1", "-i", mus, "-t", f"{total:.2f}", "-af",
+             f"volume={spec.get('music_volume', 0.8)},afade=t=in:d=1.5,afade=t=out:st={max(total-2,0):.2f}:d=2,aformat=channel_layouts=stereo:sample_rates=44100", bed0)
+    else:
+        R.ambient(total, bed0)
     bed = bed0
     if hits:
         boom = os.path.join(work, "boom.wav")

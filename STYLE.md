@@ -25,7 +25,7 @@ Devotional comment CTAs ("जय श्री राम") only when it fits natu
 5. Simple everyday Hindi; avoid heavy Sanskrit unless explained.
 6. A twist / "असली बात" moment in the middle-late part (mood `shock`).
 7. A lesson that people relate to in their own life.
-8. End (mood `cta`): ask to SEND the reel to a specific kind of person + ask for a one-line comment
+8. End (mood `cta`): ask to SEND/SHARE the reel to a specific kind of person + ask for a one-line comment + ask to FOLLOW for the next story (vary the wording daily)
    e.g. "ये कहानी उस इंसान को भेजो जो... और कमेंट में लिखो, जय श्री राम।"
 9. Total length 55–70 seconds (≈170–200 words).
 

@@ -14,16 +14,19 @@ export PIXABAY_KEY=...   # given in the task prompt, never commit it
 ```
 If edge-tts or Pixabay give SSL errors, the proxy CA is at ~/.ccr/ca-bundle.crt (make_reel.py already uses it if present).
 
+## 1b. Voice
+Follow VOICE.md (Parler, speaker Aman). Evening story reels use music devotional_bg.mp3, bells false.
+
 ## 2. Pick topic
 Read STYLE.md, CONTENT_PLAN.md, topics_done.md and LEARNINGS.md (weekly data-driven rules; they override defaults). Choose the next phase-1 topic not already done
 (alternate Ramayan / Mahabharat vs. the last entry). Research it with web search before writing.
 
 ## 3. Write spec
-`specs/YYYY-MM-DD_<slug>.json` in the same format as `specs/barbarik.json` (voice hi-IN-MadhurNeural, rate +18%).
+`specs/YYYY-MM-DD_<slug>.json` in the same format as `specs/barbarik.json`, plus "engine": "parler", "speaker": "Aman", "music": "devotional_bg.mp3".
 
 ## 4. Render & check
 ```bash
-python3 tools/make_reel.py specs/<file>.json /tmp/out.mp4
+nohup python3 tools/make_reel.py specs/<file>.json /tmp/out.mp4 > /tmp/render.log 2>&1 &   # ~12 min with Parler; poll
 ```
 Extract ~10 frames (ffmpeg -ss ... -frames:v 1), hstack them, and LOOK at the grid with the Read tool.
 Fix bad visuals (change queries/seed) and re-render. Check duration is 50–75 s.
