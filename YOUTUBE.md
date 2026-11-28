@@ -46,6 +46,8 @@ Read LEARNINGS.md (weekly data-driven rules) before choosing topics; it override
    Description: summary, what you'll learn, ⏱️ chapters (+1 s shift), comment question, subscribe line, 📚 sources, ⚠️ disclaimer, hashtags.
 
 ## Shorts recipe (teaser or standalone)
+Note: YouTube does not let Buffer/API tools set a Shorts cover (thumbnailOffset is Instagram-only, custom thumbnails cost vidIQ
+credits). So make the FIRST frame a strong cover: the hook_text card + a striking image in block 1. Do NOT add "cover" to Shorts specs.
 Spec like harshad_short.json + engine parler/Aman + music doc_bg.mp3; 35–50 s; hook in first 2 s; one surprising fact/twist.
 Teaser CTA: "पूरी कहानी आज शाम 6 बजे, हमारे चैनल पर — सब्सक्राइब कर लो ताकि छूटे नहीं".
 Standalone CTA: comment question + "ऐसी ही कहानियों के लिए सब्सक्राइब करो". Render with make_reel.py.

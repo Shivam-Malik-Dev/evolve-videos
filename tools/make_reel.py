@@ -429,7 +429,34 @@ def main(spec_path, out):
        "-map", "[v]", "-map", "[a]", "-t", f"{total:.2f}",
        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out)
-    print(json.dumps({"out": out, "seconds": round(total, 1), "words": len(words), "cuts": len(segs)}))
+    cover_ms = None
+    if spec.get("cover"):
+        cover_ms = add_cover(spec["cover"], out, work, total)
+    print(json.dumps({"out": out, "seconds": round(total, 1), "words": len(words), "cuts": len(segs), "cover_offset_ms": cover_ms}))
+
+
+def add_cover(c, out, work, total):
+    """Append a 0.6 s cover frame at the END of the reel (the hook at the start stays untouched).
+    Use the returned offset as Buffer thumbnailOffset so Instagram shows it as the reel cover."""
+    import cover as CV
+    src = c["bg"]
+    url = pix_id(src[3:]) if src.startswith("id:") else pixabay(src if src.startswith("img:") else "img:" + src, set())
+    bg = fetch(url, os.path.join(work, "cover_bg.img"))
+    png = os.path.splitext(out)[0] + "_cover.png"
+    if c.get("kind", "story") == "series":
+        CV.series(bg, png, c["title"], c["day"], c.get("sub", ""))
+    else:
+        CV.story(bg, png, c["line1"], c.get("line2", ""), c.get("tag", ""))
+    clip = os.path.join(work, "cover.mp4")
+    sh("ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", png, "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+       "-t", "0.6", "-r", str(FPS), "-vf", f"scale={W}:{H},format=yuv420p", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+       "-c:a", "aac", "-b:a", "192k", clip)
+    tmp = out + ".tmp.mp4"
+    sh("ffmpeg", "-y", "-v", "error", "-i", out, "-i", clip, "-filter_complex", "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[v][a]",
+       "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
+       "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", tmp)
+    os.replace(tmp, out)
+    return int((dur(out) - 0.3) * 1000)
 
 
 if __name__ == "__main__":

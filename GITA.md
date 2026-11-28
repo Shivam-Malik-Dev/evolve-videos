@@ -4,6 +4,9 @@ Same look, voice and music as the Chalisa series (engine parler, speaker Aman, m
 verse / meaning / bigtext cards; Krishna & Arjun imagery: search "img:krishna", "img:arjuna", "img:chariot", look before using).
 Episode label: "भगवद्गीता • दिन N" and verse card label "अध्याय X • श्लोक Y".
 
+## Reel cover — same artwork every day, only the day changes
+"cover": {"kind": "series", "bg": "id:8674031", "title": "भगवद्गीता", "day": "दिन NN", "sub": "अध्याय X • श्लोक Y"}; Buffer thumbnailOffset = cover_offset_ms.
+
 ## Plan
 - 1 shloka per day (2 when the two belong together, e.g. lists of warriors in Chapter 1 — group up to 3 there to keep it interesting).
 - Chapter 1 from shloka 1. Chapter 1 is mostly names of warriors: tell it as a story (the setting, Dhritarashtra's question,

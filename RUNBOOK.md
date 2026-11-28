@@ -24,6 +24,12 @@ Read STYLE.md, CONTENT_PLAN.md, topics_done.md and LEARNINGS.md (weekly data-dri
 ## 3. Write spec
 `specs/YYYY-MM-DD_<slug>.json` in the same format as `specs/barbarik.json`, plus "engine": "parler", "speaker": "Aman", "music": "devotional_bg.mp3".
 
+## 3b. Cover (owner request) — every evening reel gets its own cover
+Add "cover": {"kind": "story", "bg": "id:<pixabay id>", "line1": "<big hook ≤ 14 chars>", "line2": "<line 2>", "tag": "<series tag, e.g. महाभारत की अनसुनी कहानी / रामायण की अनसुनी कहानी>"}.
+Pick a dramatic, on-topic image (look at it first). Good epic art ids: 9252303, 9252305, 9252309 (warrior archer),
+9252299 (Krishna & Arjun at war), 9252314 (Ram on horse in battle), 8674031 (Krishna), 8598225 / 8797246 (Hanuman), 8537288 (warrior king).
+Use the printed cover_offset_ms as Buffer thumbnailOffset.
+
 ## 4. Render & check
 ```bash
 nohup python3 tools/make_reel.py specs/<file>.json /tmp/out.mp4 > /tmp/render.log 2>&1 &   # ~12 min with Parler; poll
@@ -39,7 +45,7 @@ tools/publish_media.sh /tmp/YYYY-MM-DD_<slug>.mp4      # uploads to the history-
 git add -A && git commit -m "Reel YYYY-MM-DD: <topic>" && git -c push.negotiate=true push
 ```
 Buffer `create_post`: channelId 6b092d878541f09ecbbde431, schedulingType automatic, mode customScheduled,
-dueAt = today 19:00 IST (+05:30) (if already past, shareNow), assets [{video:{url (the media-branch raw URL), metadata:{thumbnailOffset:1500}}}],
+dueAt = today 19:00 IST (+05:30) (if already past, shareNow), assets [{video:{url (the media-branch raw URL), metadata:{thumbnailOffset: cover_offset_ms}}}],
 metadata.instagram = {type: reel, shouldShareToFeed: true, isAiGenerated: true}, caption per STYLE.md.
 
 ## 6. Report

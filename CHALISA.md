@@ -20,6 +20,10 @@ and export HF_TOKEN (given in the task prompt). First run downloads ~3.7 GB. Ren
 make_reel.py with nohup in the background and poll. If Parler fails (install/token/timeout), fall back to the Edge voice by
 removing "engine"/"speaker" from the spec, and tell the owner.
 
+## Reel cover (owner request 2026-11-28) — same artwork every day, only the day changes
+Add to every spec: "cover": {"kind": "series", "bg": "id:8598225", "title": "हनुमान चालीसा", "day": "दिन NN", "sub": "चौपाई X–Y • सरल अर्थ"}
+make_reel.py appends the cover as the last 0.6 s and prints "cover_offset_ms" → use it as the Buffer thumbnailOffset.
+
 ## Episode recipe (75–100 s)
 Spec must include: "engine": "parler", "speaker": "Aman", "music": "devotional_bg.mp3", "music_volume": 0.9, "bells": true (temple bells at start + before each verse card). Voice expression is automatic per sentence — write with ?, !, ... and short punchy lines where emotion should change.
 
