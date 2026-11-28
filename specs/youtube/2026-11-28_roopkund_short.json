@@ -1,0 +1,75 @@
+{
+ "engine": "parler",
+ "speaker": "Aman",
+ "music": "doc_bg.mp3",
+ "music_volume": 0.8,
+ "seed": 5,
+ "avoid_tags": [
+  "cartoon",
+  "halloween",
+  "anime",
+  "zombie",
+  "blood",
+  "beach",
+  "synthwave",
+  "retro",
+  "neon",
+  "flowers",
+  "robot",
+  "artificial intelligence",
+  "android",
+  "cyborg"
+ ],
+ "hook_text": "हिमालय की झील में\n*सैकड़ों कंकाल*",
+ "blocks": [
+  {
+   "mood": "hook",
+   "say": "हिमालय में एक झील है... जिसके पानी में, सैकड़ों इंसानी कंकाल पड़े हैं!",
+   "broll": [
+    "himalaya snow",
+    "mountain lake snow"
+   ]
+  },
+  {
+   "mood": "neutral",
+   "say": "ये है उत्तराखंड की रूपकुंड झील। करीब सोलह हज़ार फ़ीट की ऊँचाई पर। उन्नीस सौ बयालीस में, एक फ़ॉरेस्ट रेंजर ने यहाँ, हड्डियों का ढेर देखा।",
+   "broll": [
+    "himalaya",
+    "glacier lake",
+    "img:skull"
+   ]
+  },
+  {
+   "mood": "tense",
+   "say": "सालों तक माना गया, कि ये सब एक ही रात मरे थे। शायद एक भयानक ओलावृष्टि में। कुछ खोपड़ियों पर, गहरी चोट के निशान भी थे।",
+   "broll": [
+    "snow storm mountain",
+    "snowfall mountain"
+   ]
+  },
+  {
+   "mood": "shock",
+   "say": "लेकिन दो हज़ार उन्नीस की डीएनए जाँच ने, सबको चौंका दिया! ये लोग, करीब एक हज़ार साल के फ़ासले पर मरे थे! और चौदह लोग, ग्रीस जैसे भूमध्य सागर के इलाक़े के निकले!",
+   "broll": [
+    "dna",
+    "test tube laboratory",
+    "img:santorini"
+   ]
+  },
+  {
+   "mood": "sad",
+   "say": "हज़ारों किलोमीटर दूर से, वो इस बर्फ़ीली झील तक क्यों आए? वैज्ञानिक, आज तक नहीं जानते।",
+   "broll": [
+    "fog mountain",
+    "snow mountain clouds"
+   ]
+  },
+  {
+   "mood": "cta",
+   "say": "तुम्हें क्या लगता है, वो यहाँ क्या करने आए थे? कमेंट में बताओ। और ऐसी ही कहानियों के लिए, सब्सक्राइब करो!",
+   "broll": [
+    "himalaya sunrise"
+   ]
+  }
+ ]
+}

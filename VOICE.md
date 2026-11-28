@@ -2,7 +2,8 @@
 
 Setup (after RUNBOOK §1):
 ```bash
-pip install --break-system-packages -q torch "protobuf>=5.26" git+https://github.com/huggingface/parler-tts.git
+pip install --break-system-packages -q git+https://github.com/huggingface/parler-tts.git   # pulls torch (pytorch.org index is blocked by proxy)
+pip install --break-system-packages -q "protobuf>=5.26"   # separately, after parler (one command = resolver conflict)
 export HF_TOKEN=...   # from the task prompt; never commit
 ```
 First use downloads ~3.7 GB. Speed ≈ 10 s of compute per 1 s of audio → 60 s reel ≈ 12 min, 9 min long video ≈ 90–110 min.
